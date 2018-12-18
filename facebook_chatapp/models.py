@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-class User(models.Model):
-
-    sender_id = models.IntegerField()
 
 class Pizza(models.Model):
 
@@ -17,4 +14,9 @@ class Pizza(models.Model):
     graph_location = models.CharField( max_length=128,null=True)
     address = models.CharField( max_length=128,null=True)
     user_id = models.IntegerField()
-    user_id_id = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+
+
+class Flag(models.Model):
+    pickup_flag = models.IntegerField(null=True)
+    delivery_flag = models.IntegerField(null =True)
+    user = models.ForeignKey(Pizza, on_delete=models.CASCADE,null=True)
