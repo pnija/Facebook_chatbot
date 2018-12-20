@@ -9,6 +9,7 @@ from django.http.response import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
+from facebook_chatbot.settings import TOKEN
 from django.contrib.sessions.backends.db import SessionStore
 from urllib3 import request
 import datetime
@@ -51,9 +52,7 @@ def first_message(fbid, session_obj):
     response_msg = json.dumps({"recipient": {"id": fbid},
                                "message": {"text": received_message, }
                                })
-    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token=EAAHUP2zu3sEBAITz6HfDWfukA8n' \
-                       'TF8ziqwZC86RbgiZC5c9IZAr2m0GnBZBShwiuImZBYycIszE3ryN4gu6oRASff4RMJPUFVzwmlER1lE3awFIxKDV' \
-                       'ZCu1yZAxYryxbWJ7zxJFAgnKSeG9rErTcjMDOTkEoDZBnQn8ndkJHhumCWUjz6WNOuWK6'
+    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token='+TOKEN
     status = requests.post(post_message_url, headers={"Content-Type": "application/json"}, data=response_msg)
 
 
@@ -70,10 +69,17 @@ def first_message_image(fbid):
                                    },
                                }
                                })
-    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token=EAAHUP2zu3sEBAITz6HfDWfukA8nTF8ziqw' \
-                       'ZC86RbgiZC5c9IZAr2m0GnBZBShwiuImZBYycIszE3ryN4gu6oRASff4RMJPUFVzwmlER1lE3awFIxKDVZCu1yZAxYry' \
-                       'xbWJ7zxJFAgnKSeG9rErTcjMDOTkEoDZBnQn8ndkJHhumCWUjz6WNOuWK6'
+    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token='+TOKEN
     status = requests.post(post_message_url, headers={"Content-Type": "application/json"}, data=response_msg)
+
+
+# def unwanted(fbid):
+#     pizza_obj = Pizza.objects.get(user_id=fbid)
+#     if pizza_obj.pizza_type != ' ' and pizza_obj.size != ' ' and pizza_obj.address != ' ':
+#         return '!delete'
+#     else:
+#         pizza_obj.delete()
+#         return 'delete'
 
 
 def pizza_type(fbid):
@@ -88,10 +94,9 @@ def pizza_type(fbid):
     response_msg = json.dumps({"recipient": {"id": fbid},
                                "message": {"text": received_message, }
                                })
-    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token=EAAHUP2zu3sEBAITz6HfDWfukA8nTF8' \
-                       'ziqwZC86RbgiZC5c9IZAr2m0GnBZBShwiuImZBYycIszE3ryN4gu6oRASff4RMJPUFVzwmlER1lE3awFIxKDVZCu1yZA' \
-                       'xYryxbWJ7zxJFAgnKSeG9rErTcjMDOTkEoDZBnQn8ndkJHhumCWUjz6WNOuWK6'
+    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token='+TOKEN
     status = requests.post(post_message_url, headers={"Content-Type": "application/json"}, data=response_msg)
+
 
 
 def post_facebook_message(fbid, received, message, request):
@@ -140,7 +145,11 @@ def post_facebook_message(fbid, received, message, request):
     if int(session_obj.session_data) > 0:
         if (value == 'greetings' or value == 'pizza_intent') and message[value][0]['confidence'] >= 0.6:
             session_obj.delete()
-            session_obj = Session.objects.create(session_key=fbid, expire_date=datetime.datetime(2018, 12, 20))
+            now = str(datetime.datetime.now())
+            now = now.split(' ')[0].split('-')
+            session_obj = Session.objects.create(session_key=fbid,
+                                                 expire_date=datetime.datetime(int(now[0]), int(now[1]), int(now[2]), 0,
+                                                                               0, 20))
             session_obj.session_data = 1
             session_obj.save()
     if int(session_obj.session_data) == 1:
@@ -204,7 +213,9 @@ def post_facebook_message(fbid, received, message, request):
                                                            "2.Wheat Thin Crust,\n" \
                                                            "3.Cheese Burst,\n" \
                                                            "4.Fresh Pan,\n" \
-                                                           "5.Italian Crust"}
+                                                           "5.Italian Crust,\n" \
+                                                           "6.Cheese Stuffed Crust,\n" \
+                                                           "7.Pizza Bagels"}
                                        })
         if ((value != 'customization_no') and (value != 'pizza_size') and (value != 'customization_yes')) or \
                 message[value][0]['confidence'] < 0.6:
@@ -221,10 +232,12 @@ def post_facebook_message(fbid, received, message, request):
                                                            "3.Crisp Capsicum,\n" \
                                                            "4.Fresh Tomato,\n" \
                                                            "5.Mushroom,\n" \
-                                                           "6.Bbq Chicken"}
+                                                           "6.Sausage,\n" \
+                                                           "7.Bbq Chicken"}
                                        })
 
-            crust_list = ["classic hand tossed", "wheat thin crust", "cheese burst", "fresh pan", "italian crust"]
+            crust_list = ["classic hand tossed", "wheat thin crust", "cheese burst", "fresh pan", "italian crust",
+                          "cheese stuffed crust", "pizza bagels"]
             if pizza_name_count >= 1:
 
                 crust = crust_list[int(received) - 1]
@@ -254,7 +267,8 @@ def post_facebook_message(fbid, received, message, request):
                 response_msg = json.dumps({"recipient": {"id": fbid},
                                            "message": {"text": "Need any extra things,please specify?", }
                                            })
-                topping_list = ["classic hand tossed", "wheat thin crust", "cheese burst", "fresh pan", "italian crust"]
+                topping_list = ["black olive", "onion", "crisp capsicum", "fresh tomato", "mushroom", "sausage",
+                                "bbq chicken"]
 
                 if pizza_name_count >= 1:
 
@@ -320,6 +334,8 @@ def post_facebook_message(fbid, received, message, request):
                     response_msg = json.dumps({"recipient": {"id": fbid},
                                                "message": {"text": "Enter the your name and address"}
                                                })
+            if value == 'pizza_toppings':
+                value = 'empty'
     if int(session_obj.session_data) == 8:
         if value != '!empty':
             if value == 'location' or value == "email":
@@ -361,6 +377,8 @@ def post_facebook_message(fbid, received, message, request):
                                                            "on delivery .The pizza will be delivered within 1 hr."
                                                            "Thanks for your valuable time"}
                                                })
+
+
             else:
                 response_msg = json.dumps({"recipient": {"id": fbid},
                                            "message": {"text": "Please enter a valid mobile number"}
@@ -374,7 +392,5 @@ def post_facebook_message(fbid, received, message, request):
         response_msg = json.dumps({"recipient": {"id": fbid},
                                    "message": {"text": "sorry,I can't understand you"}
                                    })
-    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token=EAAHUP2zu3sEBAITz6HfDWfukA8nTF8ziqwZ' \
-                       'C86RbgiZC5c9IZAr2m0GnBZBShwiuImZBYycIszE3ryN4gu6oRASff4RMJPUFVzwmlER1lE3awFIxKDVZCu1yZAxYry' \
-                       'xbWJ7zxJFAgnKSeG9rErTcjMDOTkEoDZBnQn8ndkJHhumCWUjz6WNOuWK6'
+    post_message_url = 'https://graph.facebook.com/v2.6/me/messages?access_token='+TOKEN
     status = requests.post(post_message_url, headers={"Content-Type": "application/json"}, data=response_msg)
