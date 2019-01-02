@@ -99,7 +99,6 @@ def pizza_type(fbid):
     status = requests.post(post_message_url, headers={"Content-Type": "application/json"}, data=response_msg)
 
 
-
 def post_facebook_message(fbid, received, message, request):
     # session_obj = Session.objects.create(pk=fbid)
     try:
@@ -159,9 +158,9 @@ def post_facebook_message(fbid, received, message, request):
 
             session_obj.save()
 
-            response_msg = json.dumps({"recipient": {"id": fbid},
-                                       "message": {"text": "Which size you needed,Regular,Medium,Large", }
-                                       })
+            # response_msg = json.dumps({"recipient": {"id": fbid},
+            #                            "message": {"text": "Which size you needed,Regular,Medium,Large", }
+            #                            })
             pizza_list = ['prosciutto pizza', 'cheese pizza', 'buffalo chicken pizza', 'sweet ricotta pizza',
                           'brown butter pizza', 'grilled zucchini pizza', 'chicken alfredo pizza']
             pizza_price = {1: [99, 199, 299], 2: [120, 220, 320], 3: [110, 210, 310], 4: [99, 199, 299],
@@ -178,7 +177,7 @@ def post_facebook_message(fbid, received, message, request):
             # pizza_obj = Pizza.objects.latest('id')
             pizza_name = pizza_obj.pizza_type
             response_msg = json.dumps({"recipient": {"id": fbid},
-                                       "message": {"text": "You have selected " + pizza_name + "\n,"
+                                       "message": {"text": "You have selected " + pizza_name + "." + "\n,"
                                                             " Which size you needed,Regular,Medium,Large"}
                                        })
         if value != 'pizza' and value != 'greetings' and value != 'emptyy':
@@ -220,7 +219,6 @@ def post_facebook_message(fbid, received, message, request):
             except:
                 value = 'empty'
 
-
     if int(session_obj.session_data) == 5:
         if (value == 'pizza_toppings' and message[value][0]['confidence'] >= 0.6) or pizza_name_count >= 1:
             if value == 'pizza_toppings' or value == 'eemptyy':
@@ -251,7 +249,7 @@ def post_facebook_message(fbid, received, message, request):
                     pizza_obj = Pizza.objects.latest('id')
                     pizza_obj.topping = received
                     pizza_obj.save()
-                    topping_list_index = toppings_price.index(received)
+                    topping_list_index = topping_list.index(received)
                     price_obj = Price.objects.get(pizza_id=pizza_obj)
                     price_obj.toppings_price = toppings_price[topping_list_index + 1]
                     price_obj.save()
@@ -289,6 +287,7 @@ def post_facebook_message(fbid, received, message, request):
             session_obj.save()
             response_msg = json.dumps({"recipient": {"id": fbid},
                                        "message": {"text": "Select a topping,\n" \
+                                                           " \n"\
                                                            "1.Black Olive - 10 Rs(R),20 Rs(M),30 Rs(L),\n" \
                                                            "2.Onion - 5 Rs(R),10 Rs(M),15 Rs(L),\n" \
                                                            "3.Crisp Capsicum - 10 Rs(R),20 Rs(M),25 Rs(L),\n" \
@@ -298,8 +297,8 @@ def post_facebook_message(fbid, received, message, request):
                                                            "7.Bbq Chicken - 5 Rs(R),10 Rs(M),15 Rs(L)"}
                                        })
 
-            crust_list = ["classic hand tossed", "wheat thin crust", "cheese burst", "fresh pan", "italian crust",
-                          "cheese stuffed crust", "pizza bagels"]
+            crust_list = ["classic hand tossed", "wheat thin", "cheese burst", "fresh pan", "italian",
+                          "cheese stuffed", "pizza bagels"]
             crust_price = {1: [10, 20, 30], 2: [15, 30, 45], 3: [20, 40, 50], 4: [15, 30, 45], 5: [10, 20, 30],
                            6: [20, 40, 50], 7: [20, 40, 50]}
             if pizza_name_count >= 1:
@@ -347,8 +346,8 @@ def post_facebook_message(fbid, received, message, request):
             session_obj.session_data = 4
             session_obj.save()
             price = str(price_obj.one_pizza_price)
-            messages = "You have selected "+pizza_obj.pizza_type+" .The total pizza cost is " + price +\
-                       " can I conform the order"
+            messages = "You have selected "+pizza_obj.pizza_type+" .The total pizza cost is " + price+"." +\
+                       " Can I conform the order"
             response_msg = json.dumps({"recipient": {"id": fbid},
                                        "message": {"text": messages}
                                        })
@@ -357,12 +356,13 @@ def post_facebook_message(fbid, received, message, request):
             session_obj.save()
             response_msg = json.dumps({"recipient": {"id": fbid},
                                        "message": {"text": "Cool,pick a crust type,\n" \
+                                                           " \n"\
                                                            "1.Classic Hand Tossed - 10 Rs(R),20 Rs(M),30 Rs(L),\n" \
-                                                           "2.Wheat Thin Crust - 15 Rs(R),30 Rs(M),45 Rs(L),\n" \
+                                                           "2.Wheat Thin - 15 Rs(R),30 Rs(M),45 Rs(L),\n" \
                                                            "3.Cheese Burst - 20 Rs(R),40 Rs(M),50 Rs(L),\n" \
                                                            "4.Fresh Pan - 15 Rs(R),30 Rs(M),45 Rs(L),\n" \
-                                                           "5.Italian Crust - 10 Rs(R),20 Rs(M),30 Rs(L),\n" \
-                                                           "6.Cheese Stuffed Crust - 20 Rs(R),40 Rs(M),50 Rs(L),\n" \
+                                                           "5.Italian - 10 Rs(R),20 Rs(M),30 Rs(L),\n" \
+                                                           "6.Cheese Stuffed - 20 Rs(R),40 Rs(M),50 Rs(L),\n" \
                                                            "7.Pizza Bagels - 20 Rs(R),40 Rs(M),50 Rs(L)"}
                                        })
         if ((value != 'customization_no') and (value != 'pizza_size') and (value != 'customization_yes')) or \
@@ -379,8 +379,8 @@ def post_facebook_message(fbid, received, message, request):
                 price = str(price_obj.one_pizza_price+price_obj.one_crust_price+price_obj.one_toppings_price)
 
                 messages = "You have selected "+pizza_obj.pizza_type+" with "+pizza_obj.crust+" crust and "\
-                           +pizza_obj.topping+" topping .The total pizza cost is " + price +\
-                           " can I conform the order ?"
+                           +pizza_obj.topping+" topping .The total pizza cost is " + price + "." +\
+                           " Can I conform the order ?"
                 value = '!empty'
                 pizza_obj = Pizza.objects.latest('id')
                 pizza_obj.extra = received
@@ -450,7 +450,7 @@ def post_facebook_message(fbid, received, message, request):
                 pizza_obj.address = received
                 pizza_obj.save()
                 response_msg = json.dumps({"recipient": {"id": fbid},
-                                           "message": {"text": "please enter the mobile number"}
+                                           "message": {"text": "Please enter the mobile number"}
                                            })
             if value != 'pizza_toppings' and value != 'customization_no' and value != 'location' and value != "email":
                 response_msg = json.dumps({"recipient": {"id": fbid},
