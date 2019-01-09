@@ -135,12 +135,20 @@ def post_facebook_message(fbid, received, message, request):
                                    "message": {"text": ' ', }
                                    })
     pizza_name_count = 0
+    # pizza_name_count = received
     # if user select number
-    if received in ['1', '2', '3', '4', '5', '6', '7']:
-        pizza_name_count = received
-        value = 'emptyy'
-        if int(session_obj.session_data) == 5:
-            value = 'eemptyy'
+    try:
+        if int(received):
+            received = str(received)
+            if received in ['1', '2', '3', '4', '5', '6', '7']:
+                pizza_name_count = received
+                value = 'emptyy'
+                if int(session_obj.session_data) == 5:
+                    value = 'eemptyy'
+            else:
+                pizza_name_count = '8'
+    except:
+        received = received
     x = session_obj.session_data
     if int(session_obj.session_data) > 0:
         if (value == 'greetings' or value == 'pizza_intent') and message[value][0]['confidence'] >= 0.6:
@@ -155,30 +163,30 @@ def post_facebook_message(fbid, received, message, request):
     if int(session_obj.session_data) == 1:
         if (value == 'pizza' and message[value][0]['confidence'] >= 0.6) or pizza_name_count >= 1:
             session_obj.session_data = 2
-
             session_obj.save()
-
-            # response_msg = json.dumps({"recipient": {"id": fbid},
-            #                            "message": {"text": "Which size you needed,Regular,Medium,Large", }
-            #                            })
             pizza_list = ['prosciutto pizza', 'cheese pizza', 'buffalo chicken pizza', 'sweet ricotta pizza',
                           'brown butter pizza', 'grilled zucchini pizza', 'chicken alfredo pizza']
             pizza_price = {1: [99, 199, 299], 2: [120, 220, 320], 3: [110, 210, 310], 4: [99, 199, 299],
                            5: [110, 210, 310], 6: [120, 220, 320], 7: [99, 199, 299]}
             if pizza_name_count >= 1:
-                pizza = pizza_list[int(received) - 1]
-                pizza_obj = Pizza.objects.create(pizza_type=str(pizza), user_id=fbid)
-                Price.objects.create(pizza_id=pizza_obj, pizza_price=str(pizza_price[int(received)]))
+                if int(pizza_name_count)>7:
+                    value = 'empty'
+                    session_obj.session_data = 1
+                    session_obj.save()
+                else:
+                    pizza = pizza_list[int(received) - 1]
+                    pizza_obj = Pizza.objects.create(pizza_type=str(pizza), user_id=fbid)
+                    Price.objects.create(pizza_id=pizza_obj, pizza_price=str(pizza_price[int(received)]))
             else:
                 received = received.lower()
                 index_pizza = pizza_list.index(received)
                 pizza_obj = Pizza.objects.create(pizza_type=received, user_id=fbid)
                 Price.objects.create(pizza_id=pizza_obj, pizza_price=pizza_price[index_pizza+1])
-            # pizza_obj = Pizza.objects.latest('id')
+            pizza_obj = Pizza.objects.latest('id')
             pizza_name = pizza_obj.pizza_type
             response_msg = json.dumps({"recipient": {"id": fbid},
                                        "message": {"text": "You have selected " + pizza_name + "." + "\n,"
-                                                            " Which size you needed,Regular,Medium,Large"}
+                                        " Which size you needed,Regular,Medium,Large"}
                                        })
         if value != 'pizza' and value != 'greetings' and value != 'emptyy':
             value = 'empty'
@@ -186,7 +194,6 @@ def post_facebook_message(fbid, received, message, request):
             if message[value][0]['confidence'] < 0.6:
                 value = 'empty'
     # handle pizza size
-
     if int(session_obj.session_data) == 2:
 
         if value == 'pizza_size' and message[value][0]['confidence'] >= 0.6:
@@ -218,9 +225,8 @@ def post_facebook_message(fbid, received, message, request):
                     value = 'empty'
             except:
                 value = 'empty'
-
     if int(session_obj.session_data) == 5:
-        if (value == 'pizza_toppings' and message[value][0]['confidence'] >= 0.6) or pizza_name_count >= 1:
+        if (value == 'pizza_toppings' and message[value][0]['confidence'] >= 0.6) or int(pizza_name_count) >= 1:
             if value == 'pizza_toppings' or value == 'eemptyy':
                 session_obj.session_data = 6
                 session_obj.save()
@@ -231,19 +237,22 @@ def post_facebook_message(fbid, received, message, request):
                                 "bbq chicken"]
                 toppings_price = {1: [10, 20, 30], 2: [5, 10, 15], 3: [10, 20, 25], 4: [15, 20, 25], 5: [5, 10, 20],
                                     6: [10, 15, 20], 7: [5, 10, 15]}
-
                 if pizza_name_count >= 1:
+                    if int(pizza_name_count)>7:
+                        value = 'empty'
+                        session_obj.session_data = 5
+                        session_obj.save()
+                    else:
+                        topping = topping_list[int(received) - 1]
+                        pizza_obj = Pizza.objects.latest('id')
+                        pizza_obj.topping = topping
+                        pizza_obj.save()
 
-                    topping = topping_list[int(received) - 1]
-                    pizza_obj = Pizza.objects.latest('id')
-                    pizza_obj.topping = topping
-                    pizza_obj.save()
-
-                    price_obj = Price.objects.get(pizza_id=pizza_obj)
-                    price_obj.toppings_price = toppings_price[int(received)]
-                    price_obj.save()
-                    price_obj.one_toppings_price = price_obj.toppings_price[price_obj.size_index]
-                    price_obj.save()
+                        price_obj = Price.objects.get(pizza_id=pizza_obj)
+                        price_obj.toppings_price = toppings_price[int(received)]
+                        price_obj.save()
+                        price_obj.one_toppings_price = price_obj.toppings_price[price_obj.size_index]
+                        price_obj.save()
                 else:
                     received = received.lower()
                     pizza_obj = Pizza.objects.latest('id')
@@ -259,7 +268,11 @@ def post_facebook_message(fbid, received, message, request):
             value = 'empty'
             session_obj.session_data = int(session_obj.session_data) - 1
             session_obj.save()
-        if value != 'eemptyy' and value != 'emptyy' and value != 'empty':
+        if value == 'pizza_crust_type':
+            session_obj.session_data = 5
+            session_obj.save()
+            value = 'empty'
+        if value != 'eemptyy' and value != 'emptyy' and value != 'empty' and value != 'pizza_crust_type':
             if message[value][0]['confidence'] < 0.6:
                 value = 'empty'
                 session_obj.session_data = int(session_obj.session_data) - 1
@@ -282,7 +295,6 @@ def post_facebook_message(fbid, received, message, request):
                                        "message": {"text": "Pickup or delivery", }
                                        })
         if (value == 'pizza_crust_type' and message[value][0]['confidence'] >= 0.6) or pizza_name_count >= 1:
-
             session_obj.session_data = 5
             session_obj.save()
             response_msg = json.dumps({"recipient": {"id": fbid},
@@ -302,18 +314,20 @@ def post_facebook_message(fbid, received, message, request):
             crust_price = {1: [10, 20, 30], 2: [15, 30, 45], 3: [20, 40, 50], 4: [15, 30, 45], 5: [10, 20, 30],
                            6: [20, 40, 50], 7: [20, 40, 50]}
             if pizza_name_count >= 1:
-
-                crust = crust_list[int(received) - 1]
-                pizza_obj = Pizza.objects.latest('id')
-                pizza_obj.crust = crust
-                pizza_obj.save()
-                price_obj = Price.objects.get(pizza_id=pizza_obj)
-                price_obj.crust_price = crust_price[int(received)]
-                size_index = price_obj.size_index
-                price_obj.save()
-                crust_price_list = price_obj.crust_price
-                price_obj.one_crust_price = crust_price_list[size_index]
-                price_obj.save()
+                if int(pizza_name_count)>7:
+                    value = 'empty'
+                else:
+                    crust = crust_list[int(received) - 1]
+                    pizza_obj = Pizza.objects.latest('id')
+                    pizza_obj.crust = crust
+                    pizza_obj.save()
+                    price_obj = Price.objects.get(pizza_id=pizza_obj)
+                    price_obj.crust_price = crust_price[int(received)]
+                    size_index = price_obj.size_index
+                    price_obj.save()
+                    crust_price_list = price_obj.crust_price
+                    price_obj.one_crust_price = crust_price_list[size_index]
+                    price_obj.save()
             else:
                 received = received.lower()
                 crust_list_index = crust_list.index(received)
@@ -332,7 +346,7 @@ def post_facebook_message(fbid, received, message, request):
             value = 'empty'
             session_obj.session_data = int(session_obj.session_data) - 1
             session_obj.save()
-        if value != 'emptyy' and value != 'empty' and value != 'pizza_toppings':
+        if value != 'emptyy' and value != 'empty' and value != 'pizza_toppings' and value != 'pizza_crust_type':
             if message[value][0]['confidence'] < 0.6:
                 value = 'empty'
                 session_obj.session_data = int(session_obj.session_data) - 1
